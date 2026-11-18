@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рядом — подбор кружков и секций</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Подбор кружков и секций</p>
+          <h1 id="hero-title">Сравним кружки за вас — по цене и дороге</h1>
+          <p class="subtitle">Не собирайте информацию по чатам и каталогам: пришлём несколько секций с проверенной ценой и дорогой.</p>
+          <a class="primary-button" href="#application">Оставить заявку</a>
+        </div>
+      </section>
+
+      <section class="application" id="application" aria-labelledby="form-title">
+        <div class="form-card">
+          <h2 id="form-title">Расскажите о вашем запросе</h2>
+
+          <form id="application-form" novalidate>
+            <div class="field">
+              <label for="childAge">Возраст ребёнка</label>
+              <input id="childAge" name="childAge" type="number" min="4" max="12" inputmode="numeric" placeholder="Например, 8">
+            </div>
+
+            <div class="field">
+              <label for="location">Район или школа</label>
+              <input id="location" name="location" type="text" maxlength="200" placeholder="Например, район Марьино или школа № 1">
+            </div>
+
+            <div class="field">
+              <label for="preferredTime">Удобное время</label>
+              <input id="preferredTime" name="preferredTime" type="text" maxlength="200" placeholder="Например, будни после 18:00">
+            </div>
+
+            <div class="field">
+              <label for="contactMethod">Способ связи</label>
+              <input id="contactMethod" name="contactMethod" type="text" maxlength="300" placeholder="Например, Telegram: @name">
+            </div>
+
+            <div id="form-status" class="form-status" role="status" aria-live="polite"></div>
+            <button type="submit" class="submit-button">Отправить заявку</button>
+          </form>
+        </div>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
