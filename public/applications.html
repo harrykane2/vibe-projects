@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заявки — Рядом</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="account-page">
+      <nav class="top-nav" aria-label="Навигация">
+        <a href="/">Рядом</a>
+        <button type="button" id="applications-sign-out">Выйти</button>
+      </nav>
+
+      <section class="applications-card" aria-live="polite">
+        <h1 id="applications-title">Заявки</h1>
+        <p id="applications-status" class="form-status"></p>
+        <div id="applications-list"></div>
+      </section>
+    </main>
+    <script src="/applications.js"></script>
+  </body>
+</html>

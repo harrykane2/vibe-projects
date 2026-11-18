@@ -1,6 +1,7 @@
 const form = document.querySelector("#application-form");
 const statusElement = document.querySelector("#form-status");
 const submitButton = form.querySelector("button[type='submit']");
+const accountActions = document.querySelector("#account-actions");
 
 function clearFieldErrors() {
   form.querySelectorAll(".field-error").forEach((errorElement) => {
@@ -19,6 +20,37 @@ function showFieldErrors(fieldErrors) {
     if (input) {
       input.classList.add("invalid");
     }
+
+    async function updateAccountActions() {
+      if (!accountActions) {
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/auth/get-session", { credentials: "same-origin" });
+        const session = await response.json();
+
+        if (session?.user) {
+          accountActions.innerHTML = `
+            <a href="/applications.html">Мои заявки</a>
+            <button type="button" id="sign-out-button">Выйти</button>
+          `;
+          document.querySelector("#sign-out-button").addEventListener("click", async () => {
+            await fetch("/api/auth/sign-out", {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/json" },
+              body: "{}",
+            });
+            window.location.reload();
+          });
+        }
+      } catch {
+        accountActions.innerHTML = '<a href="/login.html">Войти</a>';
+      }
+    }
+
+    updateAccountActions();
     if (errorElement) {
       errorElement.textContent = message;
     }

@@ -5,6 +5,8 @@ import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import express from "express";
 import { z } from "zod";
+import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
+import { auth } from "./auth.js";
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -21,9 +23,15 @@ db.exec(`
     location TEXT NOT NULL,
     preferred_time TEXT NOT NULL,
     contact_method TEXT NOT NULL,
+    owner_id TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )
 `);
+
+const applicationColumns = db.prepare("PRAGMA table_info(applications)").all();
+if (!applicationColumns.some((column) => column.name === "owner_id")) {
+  db.exec("ALTER TABLE applications ADD COLUMN owner_id TEXT");
+}
 
 const applicationSchema = z.object({
   childAge: z.preprocess(
@@ -48,10 +56,12 @@ const applicationSchema = z.object({
     .max(300, "Способ связи должен быть не длиннее 300 символов."),
 });
 
+app.all("/api/auth/*splat", toNodeHandler(auth));
+
 app.use(express.json());
 app.use(express.static(path.resolve("public")));
 
-app.post("/api/applications", (req, res) => {
+app.post("/api/applications", async (req, res) => {
   const parsed = applicationSchema.safeParse(req.body);
 
   if (!parsed.success) {
@@ -71,9 +81,17 @@ app.post("/api/applications", (req, res) => {
     });
   }
 
+  let ownerId = null;
+  const session = await auth.api.getSession({
+    headers: fromNodeHeaders(req.headers),
+  });
+  if (session?.user?.role === "parent") {
+    ownerId = session.user.id;
+  }
+
   const insert = db.prepare(`
-    INSERT INTO applications (child_age, location, preferred_time, contact_method)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO applications (child_age, location, preferred_time, contact_method, owner_id)
+    VALUES (?, ?, ?, ?, ?)
   `);
 
   const result = insert.run(
@@ -81,12 +99,55 @@ app.post("/api/applications", (req, res) => {
     parsed.data.location,
     parsed.data.preferredTime,
     parsed.data.contactMethod,
+    ownerId,
   );
 
   return res.status(201).json({
     ok: true,
     message: "Заявка отправлена. Мы получили ваши данные и свяжемся с вами.",
     id: Number(result.lastInsertRowid),
+  });
+});
+
+app.get("/api/applications", async (req, res) => {
+  const session = await auth.api.getSession({
+    headers: fromNodeHeaders(req.headers),
+  });
+
+  if (!session) {
+    return res.status(401).json({
+      ok: false,
+      message: "Для просмотра заявок необходимо войти.",
+    });
+  }
+
+  const role = session.user.role;
+  let applications;
+
+  if (role === "staff") {
+    applications = db.prepare(`
+      SELECT id, child_age, location, preferred_time, contact_method, owner_id, created_at
+      FROM applications
+      ORDER BY id DESC
+    `).all();
+  } else if (role === "parent") {
+    applications = db.prepare(`
+      SELECT id, child_age, location, preferred_time, contact_method, owner_id, created_at
+      FROM applications
+      WHERE owner_id = ?
+      ORDER BY id DESC
+    `).all(session.user.id);
+  } else {
+    return res.status(403).json({
+      ok: false,
+      message: "Для просмотра заявок нет подходящей роли.",
+    });
+  }
+
+  return res.json({
+    ok: true,
+    role,
+    applications,
   });
 });
 

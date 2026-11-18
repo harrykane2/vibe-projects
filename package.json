@@ -5,11 +5,18 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "auth:migrate": "npx better-auth migrate",
+    "auth:seed": "node scripts/seed-accounts.js"
   },
   "dependencies": {
+    "better-auth": "^1.7.26",
+    "better-sqlite3": "^13.2.0",
     "dotenv": "17.2.3",
     "express": "5.1.0",
     "zod": "4.1.12"
+  },
+  "devDependencies": {
+    "@better-auth/cli": "^1.4.22"
   }
 }
