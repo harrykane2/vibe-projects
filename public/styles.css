@@ -115,6 +115,19 @@ h1 {
   border-color: #e9803d;
 }
 
+.field input.invalid {
+  border-color: #9f2f22;
+  background: #fffafa;
+}
+
+.field-error {
+  min-height: 18px;
+  margin: -2px 0 0;
+  color: #9f2f22;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
 .form-status {
   min-height: 24px;
   margin: 4px 0 14px;

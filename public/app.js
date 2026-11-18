@@ -2,10 +2,34 @@ const form = document.querySelector("#application-form");
 const statusElement = document.querySelector("#form-status");
 const submitButton = form.querySelector("button[type='submit']");
 
+function clearFieldErrors() {
+  form.querySelectorAll(".field-error").forEach((errorElement) => {
+    errorElement.textContent = "";
+  });
+  form.querySelectorAll("input").forEach((input) => {
+    input.classList.remove("invalid");
+  });
+}
+
+function showFieldErrors(fieldErrors) {
+  for (const [fieldName, message] of Object.entries(fieldErrors)) {
+    const input = form.elements[fieldName];
+    const errorElement = document.querySelector(`#${fieldName}-error`);
+
+    if (input) {
+      input.classList.add("invalid");
+    }
+    if (errorElement) {
+      errorElement.textContent = message;
+    }
+  }
+}
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   statusElement.className = "form-status";
   statusElement.textContent = "";
+  clearFieldErrors();
   submitButton.disabled = true;
 
   const formData = new FormData(form);
@@ -28,7 +52,11 @@ form.addEventListener("submit", async (event) => {
     const data = await response.json();
 
     if (!response.ok) {
-      statusElement.textContent = data.errors?.join("\n") || data.message || "Проверьте данные заявки.";
+      if (data.fieldErrors) {
+        showFieldErrors(data.fieldErrors);
+      } else {
+        statusElement.textContent = data.message || "Проверьте данные заявки.";
+      }
       return;
     }
 

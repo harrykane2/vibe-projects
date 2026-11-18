@@ -26,11 +26,14 @@ db.exec(`
 `);
 
 const applicationSchema = z.object({
-  childAge: z.coerce.number({
-    error: "Укажите возраст ребёнка.",
-  }).int("Возраст должен быть целым числом.")
-    .min(4, "Возраст ребёнка должен быть от 4 до 12 лет.")
-    .max(12, "Возраст ребёнка должен быть от 4 до 12 лет."),
+  childAge: z.preprocess(
+    (value) => value === "" || value === null || value === undefined ? undefined : value,
+    z.coerce.number({
+      error: "Укажите возраст ребёнка.",
+    }).int("Возраст должен быть целым числом.")
+      .min(4, "Возраст ребёнка должен быть от 4 до 12 лет.")
+      .max(12, "Возраст ребёнка должен быть от 4 до 12 лет."),
+  ),
   location: z.string()
     .trim()
     .min(2, "Укажите район или школу.")
@@ -52,10 +55,19 @@ app.post("/api/applications", (req, res) => {
   const parsed = applicationSchema.safeParse(req.body);
 
   if (!parsed.success) {
+    const fieldErrors = {};
+
+    for (const issue of parsed.error.issues) {
+      const fieldName = issue.path[0];
+      if (typeof fieldName === "string" && !fieldErrors[fieldName]) {
+        fieldErrors[fieldName] = issue.message;
+      }
+    }
+
     return res.status(400).json({
       ok: false,
       message: "Проверьте данные заявки.",
-      errors: parsed.error.issues.map((issue) => issue.message),
+      fieldErrors,
     });
   }
 

@@ -24,22 +24,26 @@
           <form id="application-form" novalidate>
             <div class="field">
               <label for="childAge">Возраст ребёнка</label>
-              <input id="childAge" name="childAge" type="number" min="4" max="12" inputmode="numeric" placeholder="Например, 8">
+              <input id="childAge" name="childAge" type="number" min="4" max="12" inputmode="numeric" placeholder="Например, 8" aria-describedby="childAge-error">
+              <p id="childAge-error" class="field-error" aria-live="polite"></p>
             </div>
 
             <div class="field">
               <label for="location">Район или школа</label>
-              <input id="location" name="location" type="text" maxlength="200" placeholder="Например, район Марьино или школа № 1">
+              <input id="location" name="location" type="text" maxlength="200" placeholder="Например, район Марьино или школа № 1" aria-describedby="location-error">
+              <p id="location-error" class="field-error" aria-live="polite"></p>
             </div>
 
             <div class="field">
               <label for="preferredTime">Удобное время</label>
-              <input id="preferredTime" name="preferredTime" type="text" maxlength="200" placeholder="Например, будни после 18:00">
+              <input id="preferredTime" name="preferredTime" type="text" maxlength="200" placeholder="Например, будни после 18:00" aria-describedby="preferredTime-error">
+              <p id="preferredTime-error" class="field-error" aria-live="polite"></p>
             </div>
 
             <div class="field">
               <label for="contactMethod">Способ связи</label>
-              <input id="contactMethod" name="contactMethod" type="text" maxlength="300" placeholder="Например, Telegram: @name">
+              <input id="contactMethod" name="contactMethod" type="text" maxlength="300" placeholder="Например, Telegram: @name" aria-describedby="contactMethod-error">
+              <p id="contactMethod-error" class="field-error" aria-live="polite"></p>
             </div>
 
             <div id="form-status" class="form-status" role="status" aria-live="polite"></div>
