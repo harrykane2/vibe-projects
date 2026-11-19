@@ -1,155 +1,22 @@
 import "dotenv/config";
 
-import fs from "node:fs";
-import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
 import express from "express";
-import { z } from "zod";
 import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
 import { auth } from "./auth.js";
+import { createApplicationsRouter } from "./api/applications.js";
+import { mountStaticPresentation } from "./presentation/static.js";
+import { createApplicationStore } from "./storage/applications.js";
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
 const databasePath = process.env.DATABASE_PATH || "./data/ryadom.sqlite";
-
-const resolvedDatabasePath = path.resolve(databasePath);
-fs.mkdirSync(path.dirname(resolvedDatabasePath), { recursive: true });
-
-const db = new DatabaseSync(resolvedDatabasePath);
-db.exec(`
-  CREATE TABLE IF NOT EXISTS applications (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    child_age INTEGER NOT NULL,
-    location TEXT NOT NULL,
-    preferred_time TEXT NOT NULL,
-    contact_method TEXT NOT NULL,
-    owner_id TEXT,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )
-`);
-
-const applicationColumns = db.prepare("PRAGMA table_info(applications)").all();
-if (!applicationColumns.some((column) => column.name === "owner_id")) {
-  db.exec("ALTER TABLE applications ADD COLUMN owner_id TEXT");
-}
-
-const applicationSchema = z.object({
-  childAge: z.preprocess(
-    (value) => value === "" || value === null || value === undefined ? undefined : value,
-    z.coerce.number({
-      error: "Укажите возраст ребёнка.",
-    }).int("Возраст должен быть целым числом.")
-      .min(4, "Возраст ребёнка должен быть от 4 до 12 лет.")
-      .max(12, "Возраст ребёнка должен быть от 4 до 12 лет."),
-  ),
-  location: z.string()
-    .trim()
-    .min(2, "Укажите район или школу.")
-    .max(200, "Название района или школы должно быть не длиннее 200 символов."),
-  preferredTime: z.string()
-    .trim()
-    .min(2, "Укажите удобное время.")
-    .max(200, "Удобное время должно быть не длиннее 200 символов."),
-  contactMethod: z.string()
-    .trim()
-    .min(2, "Укажите способ связи.")
-    .max(300, "Способ связи должен быть не длиннее 300 символов."),
-});
+const applicationStore = createApplicationStore(databasePath);
 
 app.all("/api/auth/*splat", toNodeHandler(auth));
 
 app.use(express.json());
-app.use(express.static(path.resolve("public")));
-
-app.post("/api/applications", async (req, res) => {
-  const parsed = applicationSchema.safeParse(req.body);
-
-  if (!parsed.success) {
-    const fieldErrors = {};
-
-    for (const issue of parsed.error.issues) {
-      const fieldName = issue.path[0];
-      if (typeof fieldName === "string" && !fieldErrors[fieldName]) {
-        fieldErrors[fieldName] = issue.message;
-      }
-    }
-
-    return res.status(400).json({
-      ok: false,
-      message: "Проверьте данные заявки.",
-      fieldErrors,
-    });
-  }
-
-  let ownerId = null;
-  const session = await auth.api.getSession({
-    headers: fromNodeHeaders(req.headers),
-  });
-  if (session?.user?.role === "parent") {
-    ownerId = session.user.id;
-  }
-
-  const insert = db.prepare(`
-    INSERT INTO applications (child_age, location, preferred_time, contact_method, owner_id)
-    VALUES (?, ?, ?, ?, ?)
-  `);
-
-  const result = insert.run(
-    parsed.data.childAge,
-    parsed.data.location,
-    parsed.data.preferredTime,
-    parsed.data.contactMethod,
-    ownerId,
-  );
-
-  return res.status(201).json({
-    ok: true,
-    message: "Заявка отправлена. Мы получили ваши данные и свяжемся с вами.",
-    id: Number(result.lastInsertRowid),
-  });
-});
-
-app.get("/api/applications", async (req, res) => {
-  const session = await auth.api.getSession({
-    headers: fromNodeHeaders(req.headers),
-  });
-
-  if (!session) {
-    return res.status(401).json({
-      ok: false,
-      message: "Для просмотра заявок необходимо войти.",
-    });
-  }
-
-  const role = session.user.role;
-  let applications;
-
-  if (role === "staff") {
-    applications = db.prepare(`
-      SELECT id, child_age, location, preferred_time, contact_method, owner_id, created_at
-      FROM applications
-      ORDER BY id DESC
-    `).all();
-  } else if (role === "parent") {
-    applications = db.prepare(`
-      SELECT id, child_age, location, preferred_time, contact_method, owner_id, created_at
-      FROM applications
-      WHERE owner_id = ?
-      ORDER BY id DESC
-    `).all(session.user.id);
-  } else {
-    return res.status(403).json({
-      ok: false,
-      message: "Для просмотра заявок нет подходящей роли.",
-    });
-  }
-
-  return res.json({
-    ok: true,
-    role,
-    applications,
-  });
-});
+mountStaticPresentation(app);
+app.use("/api/applications", createApplicationsRouter(applicationStore));
 
 app.use((error, req, res, next) => {
   if (error instanceof SyntaxError) {
