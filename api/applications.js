@@ -30,6 +30,24 @@ export function createApplicationsRouter(applicationStore) {
   const router = express.Router();
 
   router.post("/", async (req, res) => {
+    const session = await auth.api.getSession({
+      headers: fromNodeHeaders(req.headers),
+    });
+
+    if (!session) {
+      return res.status(401).json({
+        ok: false,
+        message: "Для отправки заявки необходимо войти.",
+      });
+    }
+
+    if (session.user.role !== "parent") {
+      return res.status(403).json({
+        ok: false,
+        message: "Отправлять заявки могут только родители.",
+      });
+    }
+
     const parsed = applicationSchema.safeParse(req.body);
 
     if (!parsed.success) {
@@ -49,11 +67,7 @@ export function createApplicationsRouter(applicationStore) {
       });
     }
 
-    const session = await auth.api.getSession({
-      headers: fromNodeHeaders(req.headers),
-    });
-    const ownerId = session?.user?.role === "parent" ? session.user.id : null;
-    const id = applicationStore.create(parsed.data, ownerId);
+    const id = applicationStore.create(parsed.data, session.user.id);
 
     return res.status(201).json({
       ok: true,

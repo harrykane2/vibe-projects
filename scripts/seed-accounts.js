@@ -6,14 +6,14 @@ import { auth } from "../auth.js";
 const accounts = [
   {
     name: "Учебный родитель",
-    email: "uchebny-roditel@example.com",
-    password: "Rodytel-2026!",
+    email: "parent@ryadom.local",
+    password: "Uchebny-roditel",
     role: "parent",
   },
   {
     name: "Учебный сотрудник",
-    email: "uchebny-sotrudnik@example.com",
-    password: "Sotrudnik-2026!",
+    email: "team@ryadom.local",
+    password: "Uchebny-sotrudnik",
     role: "staff",
   },
 ];
@@ -30,7 +30,6 @@ for (const account of accounts) {
         name: account.name,
         email: account.email,
         password: account.password,
-        role: account.role,
       },
     });
   }

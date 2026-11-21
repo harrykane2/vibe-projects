@@ -84,6 +84,11 @@ form.addEventListener("submit", async (event) => {
     const data = await response.json();
 
     if (!response.ok) {
+      if (response.status === 401) {
+        window.location.href = "/login.html";
+        return;
+      }
+
       if (data.fieldErrors) {
         showFieldErrors(data.fieldErrors);
       } else {
