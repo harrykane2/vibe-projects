@@ -37,13 +37,17 @@ cp .env.example .env
 
 Замените `BETTER_AUTH_SECRET` в `.env` на собственную случайную строку длиной не менее 32 символов. Настоящий секрет не добавляйте в Git.
 
+### Текущая версия (`main`)
+
 Для входа через Better Auth создайте таблицы библиотеки и учебные учётные записи:
 
 ```bash
-npm run auth:migrate
+npm run auth:migrate -- --yes
 npm run auth:seed
 npm start
 ```
+
+Флаг `--yes` подтверждает миграцию без интерактивного вопроса. В текущей версии родительская папка базы создаётся автоматически; вручную создавать `data/` не нужно.
 
 ## Учебные учётные записи
 
@@ -53,6 +57,56 @@ npm start
 | Сотрудник (`staff`) | `team@ryadom.local` | `Uchebny-sotrudnik` |
 
 Пароли хранятся в учебной базе только в хешированном виде средствами Better Auth. Пароли приведены в документации для локального входа.
+
+## Запуск контрольных версий
+
+Исторические коммиты сохраняют поведение и настройки, которые были на момент их создания. Для каждой версии используйте отдельную чистую копию репозитория и Node.js 22 или новее.
+
+### Версия 2 — контрольный коммит `824f095`
+
+```bash
+git clone https://github.com/harrykane2/vibe-projects.git vibe-projects-v2
+cd vibe-projects-v2
+git checkout 824f095
+npm install
+cp .env.example .env
+```
+
+Задайте в `.env` случайный `BETTER_AUTH_SECRET` длиной не менее 32 символов, затем выполните:
+
+```bash
+mkdir -p data
+npm run auth:migrate -- --yes
+npm run auth:seed
+npm start
+```
+
+В этом историческом коммите `auth.js` не создаёт `data/` автоматически, поэтому создайте её до миграции и запуска. Seed этого коммита использует адреса `uchebny-roditel@example.com` и `uchebny-sotrudnik@example.com` с паролями `Rodytel-2026!` и `Sotrudnik-2026!`.
+
+### Версия 3 — контрольный коммит `8a15ec0`
+
+В новой чистой копии выполните:
+
+```bash
+git clone https://github.com/harrykane2/vibe-projects.git vibe-projects-v3
+cd vibe-projects-v3
+git checkout 8a15ec0
+npm install
+cp .env.example .env
+```
+
+Задайте в `.env` случайный `BETTER_AUTH_SECRET` длиной не менее 32 символов, затем выполните:
+
+```bash
+mkdir -p data
+npm run auth:migrate -- --yes
+npm run auth:seed
+npm start
+```
+
+Как и в версии 2, каталог `data/` на этом коммите нужно создать вручную. Seed использует исторические тестовые адреса и пароли, указанные для версии 2 выше. В версии 3 анонимная корректная заявка возвращает `201` и сохраняется с пустым `owner_id`; в текущей версии она отклоняется и не сохраняется.
+
+Для актуальных учебных записей `parent@ryadom.local` и `team@ryadom.local` используйте текущую версию `main`, а не исторические seed-скрипты этих коммитов.
 
 ### Запуск лендинга
 
